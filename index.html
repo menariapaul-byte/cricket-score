@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cricket Score</title>
+  <style>
+    :root { font-family: system-ui, Arial, sans-serif; }
+    body { margin: 0; background: #0b1220; color: #e8eefc; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .card { background: #101a33; border: 1px solid #1d2a52; border-radius: 14px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    h1 { margin: 0 0 10px; font-size: 20px; }
+    .grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    @media (min-width: 720px){ .grid { grid-template-columns: 1.3fr .7fr; } }
+
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    label { font-size: 12px; opacity: .9; display: block; margin-bottom: 6px; }
+    input, select, button {
+      background: #0c1530; color: #e8eefc; border: 1px solid #223261;
+      border-radius: 10px; padding: 10px 12px; font-size: 14px;
+    }
+    input { width: 100%; }
+    .mini { width: 110px; }
+    button { cursor: pointer; }
+    button:hover { border-color: #4c6fff; }
+    .btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .btns button { padding: 12px 10px; font-weight: 600; }
+    .danger { border-color: #7a2b2b; }
+    .danger:hover { border-color: #ff5b5b; }
+
+    .score {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 12px; border-radius: 12px; background: #0c1530; border: 1px solid #223261;
+      margin-top: 10px;
+    }
+    .big { font-size: 44px; font-weight: 800; letter-spacing: 1px; }
+    .meta { text-align: right; opacity: .95; }
+    .meta div { font-size: 13px; }
+    .muted { opacity: .7; font-size: 12px; }
+    .log { margin-top: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; opacity: .9; max-height: 220px; overflow:auto; }
+    .log div { padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,.08); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Cricket Score</h1>
+      <div class="muted">Simple scoreboard UI + No-ball adds extra run (optionally add bat runs too).</div>
+
+      <div class="grid" style="margin-top:14px;">
+        <div>
+          <div class="row">
+            <div style="flex:1; min-width: 240px;">
+              <label>Batting Team</label>
+              <input id="team" placeholder="e.g., Sri Lanka" value="Team A">
+            </div>
+            <div class="mini">
+              <label>Overs (max)</label>
+              <input id="maxOvers" type="number" min="1" max="50" value="20">
+            </div>
+            <div class="mini">
+              <label>Wickets (max)</label>
+              <input id="maxWkts" type="number" min="1" max="10" value="10">
+            </div>
+          </div>
+
+          <div class="score" aria-live="polite">
+            <div>
+              <div id="teamShow" class="muted" style="margin-bottom:4px;">Team A</div>
+              <div class="big"><span id="runs">0</span>/<span id="wkts">0</span></div>
+            </div>
+            <div class="meta">
+              <div><b>Overs:</b> <span id="overs">0.0</span> / <span id="maxOversShow">20</span></div>
+              <div><b>Ball:</b> <span id="ballInfo">0</span></div>
+              <div><b>RR:</b> <span id="rr">0.00</span></div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:12px;">
+            <div style="flex:1; min-width: 240px;">
+              <label>Ball Outcome</label>
+              <div class="btns">
+                <button onclick="addRuns(0)">0</button>
+                <button onclick="addRuns(1)">1</button>
+                <button onclick="addRuns(2)">2</button>
+                <button onclick="addRuns(4)">4</button>
+
+                <button onclick="addRuns(3)">3</button>
+                <button onclick="addRuns(5)">5</button>
+                <button onclick="addRuns(6)">6</button>
+                <button class="danger" onclick="wicket()">Wicket</button>
+              </div>
+            </div>
+
+            <div style="flex:1; min-width: 240px;">
+              <label>No-ball (adds +1 extra)</label>
+              <div class="row">
+                <select id="nbBatRuns" class="mini" title="Bat runs on the no-ball">
+                  <option value="0">Bat runs 0</option>
+                  <option value="1">Bat runs 1</option>
+                  <option value="2">Bat runs 2</option>
+                  <option value="3">Bat runs 3</option>
+                  <option value="4">Bat runs 4</option>
+                  <option value="6">Bat runs 6</option>
+                </select>
+                <button style="flex:1;" onclick="noBall()">No-ball + Bat runs</button>
+              </div>
+
+              <div class="row" style="margin-top:10px;">
+                <button style="flex:1;" onclick="wide()">Wide (+1)</button>
+                <button style="flex:1;" onclick="byeLegbye()">Bye/Leg-bye (counts ball)</button>
+              </div>
+
+              <div class="row" style="margin-top:10px;">
+                <button class="danger" style="flex:1;" onclick="undo()">Undo</button>
+                <button class="danger" style="flex:1;" onclick="resetAll()">Reset</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div>
+          <div class="card" style="padding:14px; background:#0c1530; border-color:#223261;">
+            <div class="muted"><b>Event Log</b></div>
+            <div id="log" class="log"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // State
+  let runs = 0, wkts = 0;
+  let balls = 0; // legal balls only (no-ball/wide do not count)
+  let maxOvers = 20, maxWkts = 10;
+  let history = []; // for undo
+
+  const $ = (id) => document.getElementById(id);
+
+  function pushHistory(entry){
+    history.push({
+      runs, wkts, balls, maxOvers, maxWkts, team: $("team").value,
+      entry
+    });
+    // keep history reasonable
+    if(history.length > 200) history.shift();
+  }
+
+  function logLine(text){
+    const d = document.createElement("div");
+    d.textContent = text;
+    $("log").prepend(d);
+  }
+
+  function oversText(){
+    const o = Math.floor(balls / 6);
+    const b = balls % 6;
+    return `${o}.${b}`;
+  }
+
+  function runRate(){
+    const overs = balls / 6;
+    if(overs === 0) return "0.00";
+    return (runs / overs).toFixed(2);
+  }
+
+  function sync(){
+    maxOvers = clampInt($("maxOvers").value, 1, 50);
+    maxWkts  = clampInt($("maxWkts").value, 1, 10);
+    $("maxOversShow").textContent = maxOvers;
+    $("teamShow").textContent = $("team").value || "Team";
+
+    $("runs").textContent = runs;
+    $("wkts").textContent = wkts;
+    $("overs").textContent = oversText();
+    $("ballInfo").textContent = balls;
+    $("rr").textContent = runRate();
+  }
+
+  function clampInt(v, min, max){
+    const n = parseInt(v, 10);
+    if(Number.isNaN(n)) return min;
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function isInningsOver(){
+    const completedOvers = Math.floor(balls / 6);
+    const overLimitReached = (completedOvers >= maxOvers) && (balls % 6 === 0) && balls !== 0;
+    return wkts >= maxWkts || overLimitReached;
+  }
+
+  function addLegalBall(){
+    balls += 1;
+  }
+
+  function addRuns(n){
+    if(isInningsOver()) return;
+    pushHistory(`Ball: +${n}`);
+    runs += n;
+    addLegalBall();
+    logLine(`Ball ${oversText()} → +${n} run(s)`);
+    sync();
+  }
+
+  function wicket(){
+    if(isInningsOver()) return;
+    pushHistory("Wicket");
+    wkts += 1;
+    addLegalBall();
+    logLine(`Ball ${oversText()} → WICKET`);
+    sync();
+  }
+
+  // No-ball: +1 extra always, plus optional bat runs. Does NOT count as legal ball.
+  function noBall(){
+    if(isInningsOver()) return;
+    const bat = parseInt($("nbBatRuns").value, 10) || 0;
+    pushHistory(`No-ball: +1 extra +${bat} bat`);
+    runs += 1 + bat;
+    logLine(`No-ball → +1 extra +${bat} bat run(s) (ball not counted)`);
+    sync();
+  }
+
+  // Wide: +1, ball not counted
+  function wide(){
+    if(isInningsOver()) return;
+    pushHistory("Wide: +1");
+    runs += 1;
+    logLine(`Wide → +1 (ball not counted)`);
+    sync();
+  }
+
+  // Bye/Leg-bye: counts as legal ball; prompt for runs
+  function byeLegbye(){
+    if(isInningsOver()) return;
+    const val = prompt("Enter bye/leg-bye runs (0-6):", "1");
+    if(val === null) return;
+    const n = clampInt(val, 0, 6);
+    pushHistory(`Bye/Leg-bye: +${n}`);
+    runs += n;
+    addLegalBall();
+    logLine(`Bye/Leg-bye ${oversText()} → +${n} (ball counted)`);
+    sync();
+  }
+
+  function undo(){
+    const last = history.pop();
+    if(!last) return;
+    runs = last.runs;
+    wkts = last.wkts;
+    balls = last.balls;
+    $("maxOvers").value = last.maxOvers;
+    $("maxWkts").value = last.maxWkts;
+    $("team").value = last.team;
+    logLine(`UNDO → ${last.entry}`);
+    sync();
+  }
+
+  function resetAll(){
+    pushHistory("Reset");
+    runs = 0; wkts = 0; balls = 0;
+    $("log").innerHTML = "";
+    logLine("Reset scoreboard");
+    sync();
+  }
+
+  // Keep UI in sync when inputs change
+  ["team","maxOvers","maxWkts"].forEach(id => {
+    $(id).addEventListener("input", sync);
+  });
+
+  // init
+  sync();
+  logLine("Ready");
+</script>
+</body>
+</html>
