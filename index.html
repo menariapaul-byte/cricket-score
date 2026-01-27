@@ -154,6 +154,68 @@
         </div>
       </div>
 
+      <!-- Start / Resume -->
+      <div class="panel">
+        <h2>Start / Resume (from middle)</h2>
+
+        <div class="row">
+          <div style="flex:1; min-width: 160px;">
+            <label>Start Runs</label>
+            <input id="startRuns" type="number" min="0" value="0" />
+          </div>
+          <div style="flex:1; min-width: 160px;">
+            <label>Start Wkts</label>
+            <input id="startWkts" type="number" min="0" max="10" value="0" />
+          </div>
+          <div style="flex:1; min-width: 160px;">
+            <label>Start Overs (O.B)</label>
+            <input id="startOvers" placeholder="e.g. 4.2" value="0.0" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button style="flex:1;" onclick="applyStart(false)">Apply start (keep events)</button>
+          <button class="danger" style="flex:1;" onclick="applyStart(true)">Apply start + clear events</button>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button style="flex:1;" onclick="toggleStartFreeHit()">Toggle FREE HIT start: <span id="startFHShow">OFF</span></button>
+        </div>
+
+        <div class="muted" style="margin-top:8px;">
+          Overs must be like <b>4.2</b> meaning 4 overs + 2 balls (legal balls only). If you enter 4.6 it will be clamped to 4.5.
+        </div>
+      </div>
+
+      <!-- Target / 2nd innings -->
+      <div class="panel">
+        <h2>2nd Innings / Target (optional)</h2>
+
+        <div class="row">
+          <div style="flex:1; min-width: 220px;">
+            <label>1st innings runs</label>
+            <input id="firstInningsRuns" type="number" min="0" placeholder="e.g. 128" />
+          </div>
+          <div style="flex:1; min-width: 220px;">
+            <label>Or set target directly</label>
+            <input id="targetRuns" type="number" min="0" placeholder="e.g. 129" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button style="flex:1;" onclick="applyTarget()">Apply target</button>
+          <button class="danger" style="flex:1;" onclick="clearTarget()">Clear target</button>
+        </div>
+
+        <div class="score" style="margin-top:10px;">
+          <div class="muted">
+            <div><b>Target:</b> <span id="tTarget">—</span></div>
+            <div><b>Remaining:</b> <span id="tRemain">—</span></div>
+            <div><b>Req RR:</b> <span id="tReqRR">—</span></div>
+          </div>
+        </div>
+      </div>
+
       <div class="panel">
         <h2>Quick Scoring</h2>
 
@@ -258,7 +320,6 @@
           </select>
         </div>
 
-        <!-- single runs select -->
         <div id="editRunsWrap">
           <label id="editRunsLabel">Runs</label>
           <select id="editRuns">
@@ -268,7 +329,6 @@
           </select>
         </div>
 
-        <!-- extra runs select (used for NB extra or Wide extra) -->
         <div id="editExtraWrap" class="hide">
           <label id="editExtraLabel">Extra runs</label>
           <select id="editExtra">
@@ -296,6 +356,12 @@
   let derived = null;
   let editIndex = null;
 
+  // Base state: start from a mid-innings score/balls
+  let base = { runs: 0, wkts: 0, legalBalls: 0, freeHit: false };
+
+  // Target (2nd innings) optional
+  let target = null; // number or null
+
   const $ = (id) => document.getElementById(id);
 
   function clampInt(v, min, max){
@@ -307,6 +373,58 @@
   function getSettings(){
     maxOvers = clampInt($("maxOvers").value, 1, 50);
     maxWkts  = clampInt($("maxWkts").value, 1, 10);
+  }
+
+  function parseOversToBalls(s){
+    const str = String(s ?? "").trim();
+    if(!str) return 0;
+    const parts = str.split(".");
+    const o = clampInt(parts[0] || "0", 0, 999);
+    const b = clampInt(parts[1] || "0", 0, 5);
+    return (o * 6) + b;
+  }
+
+  function applyStart(clearEvents){
+    getSettings();
+    const sr = clampInt($("startRuns").value, 0, 100000);
+    const sw = clampInt($("startWkts").value, 0, maxWkts);
+    const lb = parseOversToBalls($("startOvers").value);
+
+    const maxBalls = maxOvers * 6;
+    const finalLB = Math.min(lb, maxBalls);
+
+    base = { runs: sr, wkts: sw, legalBalls: finalLB, freeHit: base.freeHit };
+
+    if(clearEvents) events = [];
+    replay();
+  }
+
+  function toggleStartFreeHit(){
+    base.freeHit = !base.freeHit;
+    $("startFHShow").textContent = base.freeHit ? "ON" : "OFF";
+    replay();
+  }
+
+  function applyTarget(){
+    const first = ($("firstInningsRuns").value || "").trim();
+    const targ = ($("targetRuns").value || "").trim();
+
+    if(targ !== ""){
+      target = clampInt(targ, 0, 100000);
+    } else if(first !== ""){
+      const firstRuns = clampInt(first, 0, 100000);
+      target = firstRuns + 1;
+    } else {
+      target = null;
+    }
+    replay();
+  }
+
+  function clearTarget(){
+    target = null;
+    $("firstInningsRuns").value = "";
+    $("targetRuns").value = "";
+    replay();
   }
 
   function isInningsOver(state){
@@ -384,9 +502,57 @@
     }
   }
 
+  function escapeHtml(s){
+    return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+  }
+
+  function updateTargetPanel(){
+    const tTarget = $("tTarget");
+    const tRemain = $("tRemain");
+    const tReqRR = $("tReqRR");
+
+    if(target === null){
+      tTarget.textContent = "—";
+      tRemain.textContent = "—";
+      tReqRR.textContent = "—";
+      return;
+    }
+
+    const currentRuns = derived?.runs ?? 0;
+    const remainingRuns = Math.max(0, target - currentRuns);
+    const ballsLeft = Math.max(0, (maxOvers * 6) - (derived?.legalBalls ?? 0));
+    const oversLeft = ballsLeft / 6;
+
+    tTarget.textContent = String(target);
+    tRemain.textContent = String(remainingRuns);
+
+    // if already won, show 0.00
+    if(remainingRuns === 0){
+      tReqRR.textContent = "0.00";
+      return;
+    }
+
+    // if no balls left, req RR is infinite (display dash)
+    if(oversLeft <= 0){
+      tReqRR.textContent = "—";
+      return;
+    }
+
+    const reqRR = remainingRuns / oversLeft;
+    tReqRR.textContent = reqRR.toFixed(2);
+  }
+
   function replay(){
     getSettings();
-    const state = { runs:0, wkts:0, legalBalls:0, freeHit:false };
+
+    // Start from base, then apply events on top
+    const state = {
+      runs: base.runs,
+      wkts: base.wkts,
+      legalBalls: base.legalBalls,
+      freeHit: base.freeHit
+    };
+
     const overMap = new Map(); // overIdx -> chips
     const view = [];
 
@@ -409,7 +575,9 @@
         effectiveEv = {kind:"legalRuns", runs:0}; // dot legal ball
       }
 
-      if(!isInningsOver(state)){
+      // Stop scoring if innings is over OR chase completed
+      const chaseDone = (target !== null) && (state.runs >= target);
+      if(!isInningsOver(state) && !chaseDone){
         state.runs += runsFromEvent(effectiveEv);
         state.wkts += wktFromEvent(effectiveEv);
 
@@ -516,14 +684,13 @@
     if(derived.view.length === 0){
       cards.innerHTML = `<div class="muted">No events yet. Start scoring above.</div>`;
     }
-  }
 
-  function escapeHtml(s){
-    return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    updateTargetPanel();
   }
 
   function addEvent(ev){
-    if(derived && isInningsOver(derived)) return;
+    // prevent scoring if innings over or chase completed
+    if(derived && (isInningsOver(derived) || (target !== null && derived.runs >= target))) return;
     events.push(ev);
     replay();
   }
@@ -552,7 +719,19 @@
   }
 
   function resetAll(){
+    // Full reset: base back to 0 and clear events + target
     events = [];
+    base = { runs: 0, wkts: 0, legalBalls: 0, freeHit: false };
+    target = null;
+
+    // reset UI fields
+    $("startRuns").value = "0";
+    $("startWkts").value = "0";
+    $("startOvers").value = "0.0";
+    $("startFHShow").textContent = "OFF";
+    $("firstInningsRuns").value = "";
+    $("targetRuns").value = "";
+
     replay();
   }
 
@@ -563,7 +742,6 @@
     $("modalTitle").textContent = `Edit Event #${i+1}`;
     $("editKind").value = ev.kind;
 
-    // default selections
     $("editRuns").value = "0";
     $("editExtra").value = "0";
 
@@ -608,12 +786,10 @@
       extraWrap.classList.remove("hide");
       extraLabel.textContent = "No-ball extra running runs (0–6)";
     } else if(kind === "wide"){
-      // wide uses extra only
       runsWrap.classList.add("hide");
       extraWrap.classList.remove("hide");
       extraLabel.textContent = "Wide extra running runs (0–6)";
     } else {
-      // wicket/runout types need no runs selection
       runsWrap.classList.add("hide");
       extraWrap.classList.add("hide");
     }
@@ -654,6 +830,9 @@
   }
 
   ["team","maxOvers","maxWkts"].forEach(id => $(id).addEventListener("input", replay));
+
+  // init display for start freehit
+  $("startFHShow").textContent = base.freeHit ? "ON" : "OFF";
 
   replay();
 </script>
