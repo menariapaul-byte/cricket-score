@@ -128,14 +128,24 @@
       </div>
 
       <div class="row" style="margin-top:12px;">
+        <div style="width: 170px; min-width: 160px;">
+          <label>Innings</label>
+          <select id="innings" onchange="switchInnings()">
+            <option value="1">1st Innings</option>
+            <option value="2">2nd Innings</option>
+          </select>
+        </div>
+
         <div style="flex:1; min-width: 220px;">
           <label>Batting Team</label>
           <input id="team" value="Team A" />
         </div>
+
         <div style="width: 160px; min-width: 150px;">
           <label>Overs (max)</label>
           <input id="maxOvers" type="number" min="1" max="50" value="20" />
         </div>
+
         <div style="width: 160px; min-width: 150px;">
           <label>Wickets (max)</label>
           <input id="maxWkts" type="number" min="1" max="10" value="10" />
@@ -156,7 +166,7 @@
 
       <!-- Start / Resume -->
       <div class="panel">
-        <h2>Start / Resume (from middle)</h2>
+        <h2>Start / Resume (enter previous runs, wickets, overs/balls)</h2>
 
         <div class="row">
           <div style="flex:1; min-width: 160px;">
@@ -174,7 +184,7 @@
         </div>
 
         <div class="row" style="margin-top:10px;">
-          <button style="flex:1;" onclick="applyStart(false)">Apply start (keep events)</button>
+          <button style="flex:1;" onclick="applyStart(false)">Apply start (keep current events)</button>
           <button class="danger" style="flex:1;" onclick="applyStart(true)">Apply start + clear events</button>
         </div>
 
@@ -183,36 +193,7 @@
         </div>
 
         <div class="muted" style="margin-top:8px;">
-          Overs must be like <b>4.2</b> meaning 4 overs + 2 balls (legal balls only). If you enter 4.6 it will be clamped to 4.5.
-        </div>
-      </div>
-
-      <!-- Target / 2nd innings -->
-      <div class="panel">
-        <h2>2nd Innings / Target (optional)</h2>
-
-        <div class="row">
-          <div style="flex:1; min-width: 220px;">
-            <label>1st innings runs</label>
-            <input id="firstInningsRuns" type="number" min="0" placeholder="e.g. 128" />
-          </div>
-          <div style="flex:1; min-width: 220px;">
-            <label>Or set target directly</label>
-            <input id="targetRuns" type="number" min="0" placeholder="e.g. 129" />
-          </div>
-        </div>
-
-        <div class="row" style="margin-top:10px;">
-          <button style="flex:1;" onclick="applyTarget()">Apply target</button>
-          <button class="danger" style="flex:1;" onclick="clearTarget()">Clear target</button>
-        </div>
-
-        <div class="score" style="margin-top:10px;">
-          <div class="muted">
-            <div><b>Target:</b> <span id="tTarget">—</span></div>
-            <div><b>Remaining:</b> <span id="tRemain">—</span></div>
-            <div><b>Req RR:</b> <span id="tReqRR">—</span></div>
-          </div>
+          Overs must be like <b>4.2</b> meaning 4 overs + 2 legal balls. Wides/No-balls are NOT legal balls.
         </div>
       </div>
 
@@ -236,7 +217,6 @@
 
         <div class="muted" style="margin-top:12px;">No-ball / Wide / Bye-Leg-bye</div>
 
-        <!-- NO-BALL: bat runs + running runs -->
         <div class="row" style="margin-top:8px;">
           <select id="nbBatRuns" style="flex:1; min-width: 140px;">
             <option value="0">NB bat 0</option>
@@ -261,7 +241,6 @@
           <button style="flex:1;" onclick="noBall()">No-ball</button>
         </div>
 
-        <!-- WIDE: running runs -->
         <div class="row" style="margin-top:10px;">
           <select id="wideExtraRuns" style="flex:1; min-width: 160px;">
             <option value="0">Wide extra run 0</option>
@@ -282,7 +261,8 @@
         </div>
 
         <div class="row" style="margin-top:10px;">
-          <button class="danger" style="flex:1;" onclick="resetAll()">Reset</button>
+          <button class="danger" style="flex:1;" onclick="resetCurrentInnings()">Reset THIS innings</button>
+          <button class="danger" style="flex:1;" onclick="resetAll()">Reset BOTH innings</button>
         </div>
       </div>
 
@@ -352,15 +332,15 @@
 
 <script>
   let maxOvers = 20, maxWkts = 10;
-  let events = [];
   let derived = null;
   let editIndex = null;
 
-  // Base state: start from a mid-innings score/balls
-  let base = { runs: 0, wkts: 0, legalBalls: 0, freeHit: false };
-
-  // Target (2nd innings) optional
-  let target = null; // number or null
+  // Two innings storage (separate base + events + team)
+  const inningsData = {
+    1: { team: "Team A", base: { runs:0, wkts:0, legalBalls:0, freeHit:false }, events: [] },
+    2: { team: "Team B", base: { runs:0, wkts:0, legalBalls:0, freeHit:false }, events: [] },
+  };
+  let currentInnings = 1;
 
   const $ = (id) => document.getElementById(id);
 
@@ -384,49 +364,6 @@
     return (o * 6) + b;
   }
 
-  function applyStart(clearEvents){
-    getSettings();
-    const sr = clampInt($("startRuns").value, 0, 100000);
-    const sw = clampInt($("startWkts").value, 0, maxWkts);
-    const lb = parseOversToBalls($("startOvers").value);
-
-    const maxBalls = maxOvers * 6;
-    const finalLB = Math.min(lb, maxBalls);
-
-    base = { runs: sr, wkts: sw, legalBalls: finalLB, freeHit: base.freeHit };
-
-    if(clearEvents) events = [];
-    replay();
-  }
-
-  function toggleStartFreeHit(){
-    base.freeHit = !base.freeHit;
-    $("startFHShow").textContent = base.freeHit ? "ON" : "OFF";
-    replay();
-  }
-
-  function applyTarget(){
-    const first = ($("firstInningsRuns").value || "").trim();
-    const targ = ($("targetRuns").value || "").trim();
-
-    if(targ !== ""){
-      target = clampInt(targ, 0, 100000);
-    } else if(first !== ""){
-      const firstRuns = clampInt(first, 0, 100000);
-      target = firstRuns + 1;
-    } else {
-      target = null;
-    }
-    replay();
-  }
-
-  function clearTarget(){
-    target = null;
-    $("firstInningsRuns").value = "";
-    $("targetRuns").value = "";
-    replay();
-  }
-
   function isInningsOver(state){
     const completedOvers = Math.floor(state.legalBalls / 6);
     const overLimitReached = (completedOvers >= maxOvers) && (state.legalBalls % 6 === 0) && state.legalBalls !== 0;
@@ -435,13 +372,12 @@
 
   function countsLegalBall(ev){
     return (ev.kind === "legalRuns" || ev.kind === "wicket" || ev.kind === "runOut" || ev.kind === "bye");
-    // runOutNoBall, noBall, wide are NOT legal balls
   }
 
   function runsFromEvent(ev){
     if(ev.kind === "legalRuns") return ev.runs;
-    if(ev.kind === "noBall") return 1 + (ev.batRuns || 0) + (ev.extraRuns || 0); // ALWAYS +1
-    if(ev.kind === "wide") return 1 + (ev.extraRuns || 0); // ALWAYS +1
+    if(ev.kind === "noBall") return 1 + (ev.batRuns || 0) + (ev.extraRuns || 0);
+    if(ev.kind === "wide") return 1 + (ev.extraRuns || 0);
     if(ev.kind === "bye") return ev.runs;
     return 0;
   }
@@ -506,46 +442,62 @@
     return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
   }
 
-  function updateTargetPanel(){
-    const tTarget = $("tTarget");
-    const tRemain = $("tRemain");
-    const tReqRR = $("tReqRR");
+  function syncHeaderTeamToStore(){
+    inningsData[currentInnings].team = ($("team").value || (currentInnings === 1 ? "Team A" : "Team B"));
+  }
 
-    if(target === null){
-      tTarget.textContent = "—";
-      tRemain.textContent = "—";
-      tReqRR.textContent = "—";
-      return;
-    }
+  function loadFromStoreToUI(){
+    // team
+    const t = inningsData[currentInnings].team || (currentInnings === 1 ? "Team A" : "Team B");
+    $("team").value = t;
 
-    const currentRuns = derived?.runs ?? 0;
-    const remainingRuns = Math.max(0, target - currentRuns);
-    const ballsLeft = Math.max(0, (maxOvers * 6) - (derived?.legalBalls ?? 0));
-    const oversLeft = ballsLeft / 6;
+    // base -> start inputs
+    const b = inningsData[currentInnings].base;
+    $("startRuns").value = String(b.runs);
+    $("startWkts").value = String(b.wkts);
+    $("startOvers").value = `${Math.floor(b.legalBalls/6)}.${b.legalBalls%6}`;
+    $("startFHShow").textContent = b.freeHit ? "ON" : "OFF";
+  }
 
-    tTarget.textContent = String(target);
-    tRemain.textContent = String(remainingRuns);
+  function switchInnings(){
+    syncHeaderTeamToStore();
+    currentInnings = parseInt($("innings").value, 10) === 2 ? 2 : 1;
+    loadFromStoreToUI();
+    replay();
+  }
 
-    // if already won, show 0.00
-    if(remainingRuns === 0){
-      tReqRR.textContent = "0.00";
-      return;
-    }
+  function applyStart(clearEvents){
+    getSettings();
+    syncHeaderTeamToStore();
 
-    // if no balls left, req RR is infinite (display dash)
-    if(oversLeft <= 0){
-      tReqRR.textContent = "—";
-      return;
-    }
+    const sr = clampInt($("startRuns").value, 0, 100000);
+    const sw = clampInt($("startWkts").value, 0, maxWkts);
+    const lb = parseOversToBalls($("startOvers").value);
 
-    const reqRR = remainingRuns / oversLeft;
-    tReqRR.textContent = reqRR.toFixed(2);
+    const maxBalls = maxOvers * 6;
+    const finalLB = Math.min(lb, maxBalls);
+
+    const store = inningsData[currentInnings];
+    store.base = { runs: sr, wkts: sw, legalBalls: finalLB, freeHit: store.base.freeHit };
+    if(clearEvents) store.events = [];
+    replay();
+  }
+
+  function toggleStartFreeHit(){
+    const store = inningsData[currentInnings];
+    store.base.freeHit = !store.base.freeHit;
+    $("startFHShow").textContent = store.base.freeHit ? "ON" : "OFF";
+    replay();
   }
 
   function replay(){
     getSettings();
+    syncHeaderTeamToStore();
 
-    // Start from base, then apply events on top
+    const store = inningsData[currentInnings];
+    const events = store.events;
+    const base = store.base;
+
     const state = {
       runs: base.runs,
       wkts: base.wkts,
@@ -553,7 +505,7 @@
       freeHit: base.freeHit
     };
 
-    const overMap = new Map(); // overIdx -> chips
+    const overMap = new Map();
     const view = [];
 
     for(let i=0; i<events.length; i++){
@@ -565,28 +517,22 @@
 
       if(!overMap.has(overIdx)) overMap.set(overIdx, []);
 
-      // FREE HIT rule:
-      // - Wicket (bowler dismissals) blocked on free hit
-      // - Run Out allowed always
+      // FREE HIT: wicket blocked, runout allowed
       let effectiveEv = ev;
       let blocked = false;
       if(state.freeHit && ev.kind === "wicket"){
         blocked = true;
-        effectiveEv = {kind:"legalRuns", runs:0}; // dot legal ball
+        effectiveEv = {kind:"legalRuns", runs:0};
       }
 
-      // Stop scoring if innings is over OR chase completed
-      const chaseDone = (target !== null) && (state.runs >= target);
-      if(!isInningsOver(state) && !chaseDone){
+      if(!isInningsOver(state)){
         state.runs += runsFromEvent(effectiveEv);
         state.wkts += wktFromEvent(effectiveEv);
 
-        // No-ball triggers (or continues) free hit
         if(effectiveEv.kind === "noBall"){
           state.freeHit = true;
         }
 
-        // Consume FREE HIT only on a legal ball
         if(countsLegalBall(effectiveEv)){
           state.legalBalls += 1;
           if(state.freeHit){
@@ -615,7 +561,7 @@
 
   function render(){
     $("maxOversShow").textContent = maxOvers;
-    $("teamShow").textContent = $("team").value || "Team A";
+    $("teamShow").textContent = inningsData[currentInnings].team || (currentInnings === 1 ? "Team A" : "Team B");
 
     $("runs").textContent = derived.runs;
     $("wkts").textContent = derived.wkts;
@@ -684,14 +630,12 @@
     if(derived.view.length === 0){
       cards.innerHTML = `<div class="muted">No events yet. Start scoring above.</div>`;
     }
-
-    updateTargetPanel();
   }
 
   function addEvent(ev){
-    // prevent scoring if innings over or chase completed
-    if(derived && (isInningsOver(derived) || (target !== null && derived.runs >= target))) return;
-    events.push(ev);
+    if(derived && isInningsOver(derived)) return;
+    const store = inningsData[currentInnings];
+    store.events.push(ev);
     replay();
   }
 
@@ -714,31 +658,33 @@
   }
 
   function undoLast(){
-    events.pop();
+    const store = inningsData[currentInnings];
+    store.events.pop();
+    replay();
+  }
+
+  function resetCurrentInnings(){
+    const store = inningsData[currentInnings];
+    store.events = [];
+    store.base = { runs:0, wkts:0, legalBalls:0, freeHit:false };
+    loadFromStoreToUI();
     replay();
   }
 
   function resetAll(){
-    // Full reset: base back to 0 and clear events + target
-    events = [];
-    base = { runs: 0, wkts: 0, legalBalls: 0, freeHit: false };
-    target = null;
+    inningsData[1] = { team: "Team A", base: { runs:0, wkts:0, legalBalls:0, freeHit:false }, events: [] };
+    inningsData[2] = { team: "Team B", base: { runs:0, wkts:0, legalBalls:0, freeHit:false }, events: [] };
 
-    // reset UI fields
-    $("startRuns").value = "0";
-    $("startWkts").value = "0";
-    $("startOvers").value = "0.0";
-    $("startFHShow").textContent = "OFF";
-    $("firstInningsRuns").value = "";
-    $("targetRuns").value = "";
-
+    currentInnings = 1;
+    $("innings").value = "1";
+    loadFromStoreToUI();
     replay();
   }
 
-  // Editing
+  // Editing (edits current innings events only)
   function openEdit(i){
     editIndex = i;
-    const ev = events[i];
+    const ev = inningsData[currentInnings].events[i];
     $("modalTitle").textContent = `Edit Event #${i+1}`;
     $("editKind").value = ev.kind;
 
@@ -812,28 +758,31 @@
     else if(kind === "runOutNoBall") ev = {kind:"runOutNoBall"};
     else ev = {kind:"legalRuns", runs:0};
 
-    events[editIndex] = ev;
+    inningsData[currentInnings].events[editIndex] = ev;
     closeModal();
     replay();
   }
 
   function deleteEvent(){
     if(editIndex === null) return;
-    events.splice(editIndex, 1);
+    inningsData[currentInnings].events.splice(editIndex, 1);
     closeModal();
     replay();
   }
 
   function deleteAt(i){
-    events.splice(i, 1);
+    inningsData[currentInnings].events.splice(i, 1);
     replay();
   }
 
-  ["team","maxOvers","maxWkts"].forEach(id => $(id).addEventListener("input", replay));
+  // When team changes, store it
+  $("team").addEventListener("input", () => { syncHeaderTeamToStore(); render(); });
 
-  // init display for start freehit
-  $("startFHShow").textContent = base.freeHit ? "ON" : "OFF";
+  // When limits change, re-run (applies to both innings display)
+  ["maxOvers","maxWkts"].forEach(id => $(id).addEventListener("input", replay));
 
+  // init
+  loadFromStoreToUI();
   replay();
 </script>
 </body>
