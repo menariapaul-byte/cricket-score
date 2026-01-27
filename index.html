@@ -2,182 +2,301 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Cricket Score</title>
   <style>
-    :root { font-family: system-ui, Arial, sans-serif; }
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
     body { margin: 0; background: #0b1220; color: #e8eefc; }
-    .wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
-    .card { background: #101a33; border: 1px solid #1d2a52; border-radius: 14px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
-    h1 { margin: 0 0 10px; font-size: 20px; }
-    .grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
-    @media (min-width: 720px){ .grid { grid-template-columns: 1.3fr .7fr; } }
-
+    .wrap { max-width: 980px; margin: 0 auto; padding: 14px; }
+    .card { background: #101a33; border: 1px solid #1d2a52; border-radius: 16px; padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    h1 { margin: 0; font-size: 18px; }
+    .muted { opacity: .75; font-size: 12px; line-height: 1.3; }
     .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .spaced { justify-content: space-between; }
     label { font-size: 12px; opacity: .9; display: block; margin-bottom: 6px; }
+
     input, select, button {
       background: #0c1530; color: #e8eefc; border: 1px solid #223261;
-      border-radius: 10px; padding: 10px 12px; font-size: 14px;
+      border-radius: 14px; padding: 12px 12px; font-size: 15px;
     }
     input { width: 100%; }
-    .mini { width: 110px; }
-    button { cursor: pointer; }
-    button:hover { border-color: #4c6fff; }
-    .btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-    .btns button { padding: 12px 10px; font-weight: 600; }
+    button { cursor: pointer; font-weight: 800; }
+    button:active { transform: scale(0.99); }
     .danger { border-color: #7a2b2b; }
     .danger:hover { border-color: #ff5b5b; }
 
     .score {
       display: flex; justify-content: space-between; align-items: baseline;
-      padding: 12px; border-radius: 12px; background: #0c1530; border: 1px solid #223261;
+      padding: 12px; border-radius: 14px; background: #0c1530; border: 1px solid #223261;
       margin-top: 10px;
+      gap: 12px;
     }
-    .big { font-size: 44px; font-weight: 800; letter-spacing: 1px; }
+    .big { font-size: 42px; font-weight: 900; letter-spacing: .5px; }
     .meta { text-align: right; opacity: .95; }
-    .meta div { font-size: 13px; }
-    .muted { opacity: .7; font-size: 12px; }
-    .log { margin-top: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; opacity: .9; max-height: 220px; overflow:auto; }
-    .log div { padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,.08); }
+    .meta div { font-size: 13px; line-height: 1.3; }
+
+    .badge {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid #223261;
+      background: #0c1530;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .4px;
+      user-select: none;
+    }
+    .badge.on { border-color: #4c6fff; }
+
+    .panel { margin-top: 12px; background:#0c1530; border:1px solid #223261; border-radius: 16px; padding: 12px; }
+    .panel h2 { margin: 0 0 10px; font-size: 14px; opacity: .9; }
+
+    .btnGrid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .btnGrid button { padding: 14px 10px; border-radius: 16px; }
+
+    @media (max-width: 520px){
+      .btnGrid { grid-template-columns: repeat(3, 1fr); }
+      .big { font-size: 40px; }
+      .meta { text-align: left; }
+      .score { flex-direction: column; align-items: flex-start; }
+    }
+
+    details { border: 1px solid rgba(255,255,255,.10); border-radius: 14px; margin-bottom: 10px; background: rgba(255,255,255,.03); }
+    summary { cursor:pointer; padding:12px 12px; list-style:none; font-weight: 800; }
+    summary::-webkit-details-marker { display:none; }
+    .balls { padding: 0 12px 12px; display:flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 999px;
+      background: rgba(0,0,0,.18);
+      white-space: nowrap;
+    }
+
+    .cards { display: grid; gap: 10px; }
+    .evCard {
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      padding: 12px;
+      background: rgba(255,255,255,.03);
+    }
+    .evTop { display:flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+    .evTitle { font-weight: 900; }
+    .evBall { opacity:.8; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+    .evMeta { margin-top: 6px; display:flex; gap: 10px; flex-wrap: wrap; opacity:.9; font-size: 12px; }
+    .pill { padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.15); }
+    .evActions { margin-top: 10px; display:flex; gap: 10px; }
+    .evActions button { flex: 1; padding: 12px 10px; border-radius: 16px; }
+
+    .modalBack {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      display: none; align-items: center; justify-content: center; padding: 14px;
+    }
+    .modal {
+      width: min(720px, 100%);
+      background: #101a33; border: 1px solid #223261; border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    }
+    .modal h3 { margin: 0 0 10px; font-size: 16px; }
+    .grid2 { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 640px){ .grid2 { grid-template-columns: 1fr 1fr; } }
+    .smallBtn { padding: 12px 12px; font-size: 14px; border-radius: 16px; }
+    .hide { display:none; }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>Cricket Score</h1>
-      <div class="muted">Simple scoreboard UI + No-ball adds extra run (optionally add bat runs too).</div>
-
-      <div class="grid" style="margin-top:14px;">
+      <div class="row spaced">
         <div>
-          <div class="row">
-            <div style="flex:1; min-width: 240px;">
-              <label>Batting Team</label>
-              <input id="team" placeholder="e.g., Sri Lanka" value="Team A">
-            </div>
-            <div class="mini">
-              <label>Overs (max)</label>
-              <input id="maxOvers" type="number" min="1" max="50" value="20">
-            </div>
-            <div class="mini">
-              <label>Wickets (max)</label>
-              <input id="maxWkts" type="number" min="1" max="10" value="10">
-            </div>
-          </div>
-
-          <div class="score" aria-live="polite">
-            <div>
-              <div id="teamShow" class="muted" style="margin-bottom:4px;">Team A</div>
-              <div class="big"><span id="runs">0</span>/<span id="wkts">0</span></div>
-            </div>
-            <div class="meta">
-              <div><b>Overs:</b> <span id="overs">0.0</span> / <span id="maxOversShow">20</span></div>
-              <div><b>Ball:</b> <span id="ballInfo">0</span></div>
-              <div><b>RR:</b> <span id="rr">0.00</span></div>
-            </div>
-          </div>
-
-          <div class="row" style="margin-top:12px;">
-            <div style="flex:1; min-width: 240px;">
-              <label>Ball Outcome</label>
-              <div class="btns">
-                <button onclick="addRuns(0)">0</button>
-                <button onclick="addRuns(1)">1</button>
-                <button onclick="addRuns(2)">2</button>
-                <button onclick="addRuns(4)">4</button>
-
-                <button onclick="addRuns(3)">3</button>
-                <button onclick="addRuns(5)">5</button>
-                <button onclick="addRuns(6)">6</button>
-                <button class="danger" onclick="wicket()">Wicket</button>
-              </div>
-            </div>
-
-            <div style="flex:1; min-width: 240px;">
-              <label>No-ball (adds +1 extra)</label>
-              <div class="row">
-                <select id="nbBatRuns" class="mini" title="Bat runs on the no-ball">
-                  <option value="0">Bat runs 0</option>
-                  <option value="1">Bat runs 1</option>
-                  <option value="2">Bat runs 2</option>
-                  <option value="3">Bat runs 3</option>
-                  <option value="4">Bat runs 4</option>
-                  <option value="6">Bat runs 6</option>
-                </select>
-                <button style="flex:1;" onclick="noBall()">No-ball + Bat runs</button>
-              </div>
-
-              <div class="row" style="margin-top:10px;">
-                <button style="flex:1;" onclick="wide()">Wide (+1)</button>
-                <button style="flex:1;" onclick="byeLegbye()">Bye/Leg-bye (counts ball)</button>
-              </div>
-
-              <div class="row" style="margin-top:10px;">
-                <button class="danger" style="flex:1;" onclick="undo()">Undo</button>
-                <button class="danger" style="flex:1;" onclick="resetAll()">Reset</button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <div>
-          <div class="card" style="padding:14px; background:#0c1530; border-color:#223261;">
-            <div class="muted"><b>Event Log</b></div>
-            <div id="log" class="log"></div>
+          <h1>Cricket Score</h1>
+          <div class="muted">
+            No-ball = +1 always (plus bat runs + running runs) and gives FREE HIT next legal ball.<br>
+            Wide = +1 always (plus running runs) and does NOT count a ball. FREE HIT is consumed only by a legal ball.
           </div>
         </div>
+        <div id="freeHitBadge" class="badge">FREE HIT: OFF</div>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <div style="flex:1; min-width: 220px;">
+          <label>Batting Team</label>
+          <input id="team" value="Team A" />
+        </div>
+        <div style="width: 160px; min-width: 150px;">
+          <label>Overs (max)</label>
+          <input id="maxOvers" type="number" min="1" max="50" value="20" />
+        </div>
+        <div style="width: 160px; min-width: 150px;">
+          <label>Wickets (max)</label>
+          <input id="maxWkts" type="number" min="1" max="10" value="10" />
+        </div>
+      </div>
+
+      <div class="score" aria-live="polite">
+        <div>
+          <div id="teamShow" class="muted" style="margin-bottom:4px;">Team A</div>
+          <div class="big"><span id="runs">0</span>/<span id="wkts">0</span></div>
+        </div>
+        <div class="meta">
+          <div><b>Overs:</b> <span id="overs">0.0</span> / <span id="maxOversShow">20</span></div>
+          <div><b>Legal Balls:</b> <span id="ballInfo">0</span></div>
+          <div><b>RR:</b> <span id="rr">0.00</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Quick Scoring</h2>
+
+        <div class="muted">Legal balls</div>
+        <div class="btnGrid">
+          <button onclick="addEvent({kind:'legalRuns', runs:0})">0</button>
+          <button onclick="addEvent({kind:'legalRuns', runs:1})">1</button>
+          <button onclick="addEvent({kind:'legalRuns', runs:2})">2</button>
+          <button onclick="addEvent({kind:'legalRuns', runs:3})">3</button>
+
+          <button onclick="addEvent({kind:'legalRuns', runs:4})">4</button>
+          <button onclick="addEvent({kind:'legalRuns', runs:5})">5</button>
+          <button onclick="addEvent({kind:'legalRuns', runs:6})">6</button>
+          <button class="danger" onclick="addEvent({kind:'wicket'})">Wicket</button>
+
+          <button class="danger" onclick="addEvent({kind:'runOut'})">Run Out</button>
+        </div>
+
+        <div class="muted" style="margin-top:12px;">No-ball / Wide / Bye-Leg-bye</div>
+
+        <!-- NO-BALL: bat runs + running runs -->
+        <div class="row" style="margin-top:8px;">
+          <select id="nbBatRuns" style="flex:1; min-width: 140px;">
+            <option value="0">NB bat 0</option>
+            <option value="1">NB bat 1</option>
+            <option value="2">NB bat 2</option>
+            <option value="3">NB bat 3</option>
+            <option value="4">NB bat 4</option>
+            <option value="5">NB bat 5</option>
+            <option value="6">NB bat 6</option>
+          </select>
+
+          <select id="nbExtraRuns" style="flex:1; min-width: 140px;">
+            <option value="0">NB extra run 0</option>
+            <option value="1">NB extra run 1</option>
+            <option value="2">NB extra run 2</option>
+            <option value="3">NB extra run 3</option>
+            <option value="4">NB extra run 4</option>
+            <option value="5">NB extra run 5</option>
+            <option value="6">NB extra run 6</option>
+          </select>
+
+          <button style="flex:1;" onclick="noBall()">No-ball</button>
+        </div>
+
+        <!-- WIDE: running runs -->
+        <div class="row" style="margin-top:10px;">
+          <select id="wideExtraRuns" style="flex:1; min-width: 160px;">
+            <option value="0">Wide extra run 0</option>
+            <option value="1">Wide extra run 1</option>
+            <option value="2">Wide extra run 2</option>
+            <option value="3">Wide extra run 3</option>
+            <option value="4">Wide extra run 4</option>
+            <option value="5">Wide extra run 5</option>
+            <option value="6">Wide extra run 6</option>
+          </select>
+          <button style="flex:1;" onclick="wide()">Wide (+1)</button>
+          <button style="flex:1;" onclick="byeLegbye()">Bye/Leg-bye</button>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button class="danger" style="flex:1;" onclick="addEvent({kind:'runOutNoBall'})">Run Out (No-ball)</button>
+          <button class="danger" style="flex:1;" onclick="undoLast()">Undo last</button>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button class="danger" style="flex:1;" onclick="resetAll()">Reset</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Over-by-over</h2>
+        <div id="overBox"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Event Cards (tap Edit to fix old overs)</h2>
+        <div class="cards" id="cards"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="modalBack" class="modalBack">
+    <div class="modal">
+      <div class="row spaced">
+        <h3 id="modalTitle">Edit Event</h3>
+        <button class="smallBtn danger" onclick="closeModal()">Close</button>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <label>Event Type</label>
+          <select id="editKind" onchange="renderEditFields()">
+            <option value="legalRuns">Legal runs (0–6)</option>
+            <option value="wicket">Wicket (blocked on FREE HIT)</option>
+            <option value="runOut">Run Out (legal ball)</option>
+            <option value="runOutNoBall">Run Out (No-ball delivery)</option>
+            <option value="noBall">No-ball (+1) + bat + extra run</option>
+            <option value="wide">Wide (+1) + extra run</option>
+            <option value="bye">Bye/Leg-bye (counts ball)</option>
+          </select>
+        </div>
+
+        <!-- single runs select -->
+        <div id="editRunsWrap">
+          <label id="editRunsLabel">Runs</label>
+          <select id="editRuns">
+            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+            <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+            <option value="6">6</option>
+          </select>
+        </div>
+
+        <!-- extra runs select (used for NB extra or Wide extra) -->
+        <div id="editExtraWrap" class="hide">
+          <label id="editExtraLabel">Extra runs</label>
+          <select id="editExtra">
+            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+            <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+            <option value="6">6</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <button class="smallBtn" style="flex:1;" onclick="saveEdit()">Save</button>
+        <button class="smallBtn danger" style="flex:1;" onclick="deleteEvent()">Delete</button>
+      </div>
+
+      <div class="muted" style="margin-top:10px;">
+        Wide/No-ball do NOT consume FREE HIT. Only a legal ball consumes it.
       </div>
     </div>
   </div>
 
 <script>
-  // State
-  let runs = 0, wkts = 0;
-  let balls = 0; // legal balls only (no-ball/wide do not count)
   let maxOvers = 20, maxWkts = 10;
-  let history = []; // for undo
+  let events = [];
+  let derived = null;
+  let editIndex = null;
 
   const $ = (id) => document.getElementById(id);
-
-  function pushHistory(entry){
-    history.push({
-      runs, wkts, balls, maxOvers, maxWkts, team: $("team").value,
-      entry
-    });
-    // keep history reasonable
-    if(history.length > 200) history.shift();
-  }
-
-  function logLine(text){
-    const d = document.createElement("div");
-    d.textContent = text;
-    $("log").prepend(d);
-  }
-
-  function oversText(){
-    const o = Math.floor(balls / 6);
-    const b = balls % 6;
-    return `${o}.${b}`;
-  }
-
-  function runRate(){
-    const overs = balls / 6;
-    if(overs === 0) return "0.00";
-    return (runs / overs).toFixed(2);
-  }
-
-  function sync(){
-    maxOvers = clampInt($("maxOvers").value, 1, 50);
-    maxWkts  = clampInt($("maxWkts").value, 1, 10);
-    $("maxOversShow").textContent = maxOvers;
-    $("teamShow").textContent = $("team").value || "Team";
-
-    $("runs").textContent = runs;
-    $("wkts").textContent = wkts;
-    $("overs").textContent = oversText();
-    $("ballInfo").textContent = balls;
-    $("rr").textContent = runRate();
-  }
 
   function clampInt(v, min, max){
     const n = parseInt(v, 10);
@@ -185,95 +304,358 @@
     return Math.max(min, Math.min(max, n));
   }
 
-  function isInningsOver(){
-    const completedOvers = Math.floor(balls / 6);
-    const overLimitReached = (completedOvers >= maxOvers) && (balls % 6 === 0) && balls !== 0;
-    return wkts >= maxWkts || overLimitReached;
+  function getSettings(){
+    maxOvers = clampInt($("maxOvers").value, 1, 50);
+    maxWkts  = clampInt($("maxWkts").value, 1, 10);
   }
 
-  function addLegalBall(){
-    balls += 1;
+  function isInningsOver(state){
+    const completedOvers = Math.floor(state.legalBalls / 6);
+    const overLimitReached = (completedOvers >= maxOvers) && (state.legalBalls % 6 === 0) && state.legalBalls !== 0;
+    return state.wkts >= maxWkts || overLimitReached;
   }
 
-  function addRuns(n){
-    if(isInningsOver()) return;
-    pushHistory(`Ball: +${n}`);
-    runs += n;
-    addLegalBall();
-    logLine(`Ball ${oversText()} → +${n} run(s)`);
-    sync();
+  function countsLegalBall(ev){
+    return (ev.kind === "legalRuns" || ev.kind === "wicket" || ev.kind === "runOut" || ev.kind === "bye");
+    // runOutNoBall, noBall, wide are NOT legal balls
   }
 
-  function wicket(){
-    if(isInningsOver()) return;
-    pushHistory("Wicket");
-    wkts += 1;
-    addLegalBall();
-    logLine(`Ball ${oversText()} → WICKET`);
-    sync();
+  function runsFromEvent(ev){
+    if(ev.kind === "legalRuns") return ev.runs;
+    if(ev.kind === "noBall") return 1 + (ev.batRuns || 0) + (ev.extraRuns || 0); // ALWAYS +1
+    if(ev.kind === "wide") return 1 + (ev.extraRuns || 0); // ALWAYS +1
+    if(ev.kind === "bye") return ev.runs;
+    return 0;
   }
 
-  // No-ball: +1 extra always, plus optional bat runs. Does NOT count as legal ball.
+  function wktFromEvent(ev){
+    if(ev.kind === "wicket" || ev.kind === "runOut" || ev.kind === "runOutNoBall") return 1;
+    return 0;
+  }
+
+  function ballLabelFor(legalBallsBefore){
+    const o = Math.floor(legalBallsBefore / 6);
+    const b = (legalBallsBefore % 6) + 1;
+    return `${o}.${b}`;
+  }
+
+  function summariseEvent(ev){
+    switch(ev.kind){
+      case "legalRuns": return `${ev.runs}`;
+      case "wicket": return "WICKET";
+      case "runOut": return "RUN OUT";
+      case "runOutNoBall": return "RUN OUT (NO-BALL)";
+      case "noBall": {
+        const bat = ev.batRuns || 0;
+        const ex  = ev.extraRuns || 0;
+        const total = 1 + bat + ex;
+        return `NO-BALL (+${total})  [1 + bat ${bat} + extra ${ex}]`;
+      }
+      case "wide": {
+        const ex = ev.extraRuns || 0;
+        const total = 1 + ex;
+        return `WIDE (+${total})  [1 + extra ${ex}]`;
+      }
+      case "bye": return `BYE/LB (${ev.runs})`;
+      default: return "EVENT";
+    }
+  }
+
+  function chipText(ev){
+    switch(ev.kind){
+      case "legalRuns": return ev.runs === 0 ? "." : String(ev.runs);
+      case "wicket": return "W";
+      case "runOut": return "RO";
+      case "runOutNoBall": return "RO(NB)";
+      case "noBall": {
+        const bat = ev.batRuns || 0;
+        const ex  = ev.extraRuns || 0;
+        if(bat > 0 && ex > 0) return `Nb+${bat}+${ex}`;
+        if(bat > 0) return `Nb+${bat}`;
+        if(ex > 0)  return `Nb+E${ex}`;
+        return "Nb";
+      }
+      case "wide": {
+        const ex = ev.extraRuns || 0;
+        return ex > 0 ? `Wd+${ex}` : "Wd";
+      }
+      case "bye": return `B${ev.runs}`;
+      default: return "?";
+    }
+  }
+
+  function replay(){
+    getSettings();
+    const state = { runs:0, wkts:0, legalBalls:0, freeHit:false };
+    const overMap = new Map(); // overIdx -> chips
+    const view = [];
+
+    for(let i=0; i<events.length; i++){
+      const ev = events[i];
+
+      const beforeBalls = state.legalBalls;
+      const ballLabel = ballLabelFor(beforeBalls);
+      const overIdx = Math.floor(beforeBalls / 6);
+
+      if(!overMap.has(overIdx)) overMap.set(overIdx, []);
+
+      // FREE HIT rule:
+      // - Wicket (bowler dismissals) blocked on free hit
+      // - Run Out allowed always
+      let effectiveEv = ev;
+      let blocked = false;
+      if(state.freeHit && ev.kind === "wicket"){
+        blocked = true;
+        effectiveEv = {kind:"legalRuns", runs:0}; // dot legal ball
+      }
+
+      if(!isInningsOver(state)){
+        state.runs += runsFromEvent(effectiveEv);
+        state.wkts += wktFromEvent(effectiveEv);
+
+        // No-ball triggers (or continues) free hit
+        if(effectiveEv.kind === "noBall"){
+          state.freeHit = true;
+        }
+
+        // Consume FREE HIT only on a legal ball
+        if(countsLegalBall(effectiveEv)){
+          state.legalBalls += 1;
+          if(state.freeHit){
+            state.freeHit = false;
+          }
+        }
+      }
+
+      overMap.get(overIdx).push({ ball: ballLabel, text: chipText(ev), blocked });
+
+      view.push({
+        idx: i,
+        ball: ballLabel,
+        text: summariseEvent(ev) + (blocked ? " (BLOCKED on FREE HIT)" : ""),
+        addRuns: runsFromEvent(ev),
+        addWkt: wktFromEvent(ev)
+      });
+    }
+
+    const oversFloat = state.legalBalls / 6;
+    const rr = oversFloat === 0 ? 0 : (state.runs / oversFloat);
+
+    derived = { ...state, rr, overMap, view };
+    render();
+  }
+
+  function render(){
+    $("maxOversShow").textContent = maxOvers;
+    $("teamShow").textContent = $("team").value || "Team A";
+
+    $("runs").textContent = derived.runs;
+    $("wkts").textContent = derived.wkts;
+
+    const o = Math.floor(derived.legalBalls / 6);
+    const b = derived.legalBalls % 6;
+    $("overs").textContent = `${o}.${b}`;
+    $("ballInfo").textContent = derived.legalBalls;
+    $("rr").textContent = derived.rr.toFixed(2);
+
+    const badge = $("freeHitBadge");
+    badge.textContent = derived.freeHit ? "FREE HIT: ON" : "FREE HIT: OFF";
+    badge.classList.toggle("on", derived.freeHit);
+
+    const overBox = $("overBox");
+    overBox.innerHTML = "";
+    const keys = Array.from(derived.overMap.keys());
+    const maxKey = keys.length ? Math.max(...keys) : -1;
+
+    for(let ov=0; ov<=maxKey; ov++){
+      const chips = derived.overMap.get(ov) || [];
+      if(chips.length === 0) continue;
+
+      const det = document.createElement("details");
+      det.open = (ov === maxKey);
+
+      const sum = document.createElement("summary");
+      sum.textContent = `Over ${ov+1} (tap to expand)`;
+      det.appendChild(sum);
+
+      const balls = document.createElement("div");
+      balls.className = "balls";
+      for(const c of chips){
+        const chip = document.createElement("div");
+        chip.className = "chip";
+        chip.textContent = `${c.ball} ${c.text}${c.blocked ? "*" : ""}`;
+        balls.appendChild(chip);
+      }
+      det.appendChild(balls);
+      overBox.appendChild(det);
+    }
+
+    const cards = $("cards");
+    cards.innerHTML = "";
+    for(let i = derived.view.length - 1; i >= 0; i--){
+      const e = derived.view[i];
+      const div = document.createElement("div");
+      div.className = "evCard";
+      div.innerHTML = `
+        <div class="evTop">
+          <div class="evTitle">#${e.idx + 1} — ${escapeHtml(e.text)}</div>
+          <div class="evBall">${escapeHtml(e.ball)}</div>
+        </div>
+        <div class="evMeta">
+          <div class="pill">Runs: ${e.addRuns}</div>
+          <div class="pill">Wkt: ${e.addWkt}</div>
+        </div>
+        <div class="evActions">
+          <button onclick="openEdit(${e.idx})">Edit</button>
+          <button class="danger" onclick="deleteAt(${e.idx})">Delete</button>
+        </div>
+      `;
+      cards.appendChild(div);
+    }
+
+    if(derived.view.length === 0){
+      cards.innerHTML = `<div class="muted">No events yet. Start scoring above.</div>`;
+    }
+  }
+
+  function escapeHtml(s){
+    return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+  }
+
+  function addEvent(ev){
+    if(derived && isInningsOver(derived)) return;
+    events.push(ev);
+    replay();
+  }
+
   function noBall(){
-    if(isInningsOver()) return;
     const bat = parseInt($("nbBatRuns").value, 10) || 0;
-    pushHistory(`No-ball: +1 extra +${bat} bat`);
-    runs += 1 + bat;
-    logLine(`No-ball → +1 extra +${bat} bat run(s) (ball not counted)`);
-    sync();
+    const ex  = parseInt($("nbExtraRuns").value, 10) || 0;
+    addEvent({kind:"noBall", batRuns: bat, extraRuns: ex});
   }
 
-  // Wide: +1, ball not counted
   function wide(){
-    if(isInningsOver()) return;
-    pushHistory("Wide: +1");
-    runs += 1;
-    logLine(`Wide → +1 (ball not counted)`);
-    sync();
+    const ex = parseInt($("wideExtraRuns").value, 10) || 0;
+    addEvent({kind:"wide", extraRuns: ex});
   }
 
-  // Bye/Leg-bye: counts as legal ball; prompt for runs
   function byeLegbye(){
-    if(isInningsOver()) return;
     const val = prompt("Enter bye/leg-bye runs (0-6):", "1");
     if(val === null) return;
     const n = clampInt(val, 0, 6);
-    pushHistory(`Bye/Leg-bye: +${n}`);
-    runs += n;
-    addLegalBall();
-    logLine(`Bye/Leg-bye ${oversText()} → +${n} (ball counted)`);
-    sync();
+    addEvent({kind:"bye", runs:n});
   }
 
-  function undo(){
-    const last = history.pop();
-    if(!last) return;
-    runs = last.runs;
-    wkts = last.wkts;
-    balls = last.balls;
-    $("maxOvers").value = last.maxOvers;
-    $("maxWkts").value = last.maxWkts;
-    $("team").value = last.team;
-    logLine(`UNDO → ${last.entry}`);
-    sync();
+  function undoLast(){
+    events.pop();
+    replay();
   }
 
   function resetAll(){
-    pushHistory("Reset");
-    runs = 0; wkts = 0; balls = 0;
-    $("log").innerHTML = "";
-    logLine("Reset scoreboard");
-    sync();
+    events = [];
+    replay();
   }
 
-  // Keep UI in sync when inputs change
-  ["team","maxOvers","maxWkts"].forEach(id => {
-    $(id).addEventListener("input", sync);
-  });
+  // Editing
+  function openEdit(i){
+    editIndex = i;
+    const ev = events[i];
+    $("modalTitle").textContent = `Edit Event #${i+1}`;
+    $("editKind").value = ev.kind;
 
-  // init
-  sync();
-  logLine("Ready");
+    // default selections
+    $("editRuns").value = "0";
+    $("editExtra").value = "0";
+
+    if(ev.kind === "legalRuns") $("editRuns").value = ev.runs ?? 0;
+    if(ev.kind === "bye") $("editRuns").value = ev.runs ?? 0;
+
+    if(ev.kind === "noBall"){
+      $("editRuns").value = ev.batRuns ?? 0;
+      $("editExtra").value = ev.extraRuns ?? 0;
+    }
+
+    if(ev.kind === "wide"){
+      $("editExtra").value = ev.extraRuns ?? 0;
+    }
+
+    renderEditFields();
+    $("modalBack").style.display = "flex";
+  }
+
+  function closeModal(){
+    $("modalBack").style.display = "none";
+    editIndex = null;
+  }
+
+  function renderEditFields(){
+    const kind = $("editKind").value;
+
+    const runsWrap = $("editRunsWrap");
+    const extraWrap = $("editExtraWrap");
+    const runsLabel = $("editRunsLabel");
+    const extraLabel = $("editExtraLabel");
+
+    runsWrap.classList.remove("hide");
+    extraWrap.classList.add("hide");
+
+    if(kind === "legalRuns"){
+      runsLabel.textContent = "Runs (0–6)";
+    } else if(kind === "bye"){
+      runsLabel.textContent = "Bye/Leg-bye runs (0–6)";
+    } else if(kind === "noBall"){
+      runsLabel.textContent = "Bat runs on No-ball (0–6)";
+      extraWrap.classList.remove("hide");
+      extraLabel.textContent = "No-ball extra running runs (0–6)";
+    } else if(kind === "wide"){
+      // wide uses extra only
+      runsWrap.classList.add("hide");
+      extraWrap.classList.remove("hide");
+      extraLabel.textContent = "Wide extra running runs (0–6)";
+    } else {
+      // wicket/runout types need no runs selection
+      runsWrap.classList.add("hide");
+      extraWrap.classList.add("hide");
+    }
+  }
+
+  function saveEdit(){
+    if(editIndex === null) return;
+
+    const kind = $("editKind").value;
+    const r = parseInt($("editRuns").value, 10) || 0;
+    const ex = parseInt($("editExtra").value, 10) || 0;
+
+    let ev;
+    if(kind === "legalRuns") ev = {kind:"legalRuns", runs:r};
+    else if(kind === "bye") ev = {kind:"bye", runs:r};
+    else if(kind === "noBall") ev = {kind:"noBall", batRuns:r, extraRuns:ex};
+    else if(kind === "wide") ev = {kind:"wide", extraRuns:ex};
+    else if(kind === "wicket") ev = {kind:"wicket"};
+    else if(kind === "runOut") ev = {kind:"runOut"};
+    else if(kind === "runOutNoBall") ev = {kind:"runOutNoBall"};
+    else ev = {kind:"legalRuns", runs:0};
+
+    events[editIndex] = ev;
+    closeModal();
+    replay();
+  }
+
+  function deleteEvent(){
+    if(editIndex === null) return;
+    events.splice(editIndex, 1);
+    closeModal();
+    replay();
+  }
+
+  function deleteAt(i){
+    events.splice(i, 1);
+    replay();
+  }
+
+  ["team","maxOvers","maxWkts"].forEach(id => $(id).addEventListener("input", replay));
+
+  replay();
 </script>
 </body>
 </html>
