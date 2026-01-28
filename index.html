@@ -1,3 +1,14 @@
+Here’s the **full working code** with your logic untouched, plus:
+
+* **Sticky score on mobile** (no more scrolling up to see score)
+* **Wicket + Runout shown in RED** (buttons, over chips, event cards)
+* **4 and 6 highlighted**
+* **Better background**
+* **Reset buttons hidden under “More (Reset/Admin)”** (cleaner UI)
+
+Copy-paste as one file:
+
+```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -6,9 +17,20 @@
   <title>Cricket Score</title>
   <style>
     :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    body { margin: 0; background: #0b1220; color: #e8eefc; }
+
+    /* ===== Background upgraded ===== */
+    body{
+      margin: 0;
+      color: #e8eefc;
+      background:
+        radial-gradient(1200px 600px at 10% 0%, rgba(76,111,255,.22), transparent 55%),
+        radial-gradient(900px 500px at 90% 10%, rgba(45,212,191,.16), transparent 55%),
+        radial-gradient(900px 600px at 60% 95%, rgba(251,113,133,.10), transparent 55%),
+        linear-gradient(180deg, #070b16, #0b1220 35%, #060a13);
+    }
+
     .wrap { max-width: 980px; margin: 0 auto; padding: 14px; }
-    .card { background: #101a33; border: 1px solid #1d2a52; border-radius: 16px; padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .card { background: rgba(16,26,51,.92); border: 1px solid #1d2a52; border-radius: 16px; padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); backdrop-filter: blur(8px); }
     h1 { margin: 0; font-size: 18px; }
     .muted { opacity: .75; font-size: 12px; line-height: 1.3; }
     .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -16,18 +38,25 @@
     label { font-size: 12px; opacity: .9; display: block; margin-bottom: 6px; }
 
     input, select, button {
-      background: #0c1530; color: #e8eefc; border: 1px solid #223261;
-      border-radius: 14px; padding: 12px 12px; font-size: 15px;
+      background: rgba(12,21,48,.92);
+      color: #e8eefc;
+      border: 1px solid #223261;
+      border-radius: 14px;
+      padding: 12px 12px;
+      font-size: 15px;
     }
     input { width: 100%; }
     button { cursor: pointer; font-weight: 800; }
     button:active { transform: scale(0.99); }
+
     .danger { border-color: #7a2b2b; }
     .danger:hover { border-color: #ff5b5b; }
 
     .score {
       display: flex; justify-content: space-between; align-items: baseline;
-      padding: 12px; border-radius: 14px; background: #0c1530; border: 1px solid #223261;
+      padding: 12px; border-radius: 14px;
+      background: rgba(12,21,48,.92);
+      border: 1px solid #223261;
       margin-top: 10px;
       gap: 12px;
     }
@@ -35,12 +64,22 @@
     .meta { text-align: right; opacity: .95; }
     .meta div { font-size: 13px; line-height: 1.3; }
 
+    /* Sticky score on mobile */
+    @media (max-width: 720px){
+      .score{
+        position: sticky;
+        top: 8px;
+        z-index: 20;
+        backdrop-filter: blur(10px);
+      }
+    }
+
     .badge {
       display: inline-block;
       padding: 8px 12px;
       border-radius: 999px;
       border: 1px solid #223261;
-      background: #0c1530;
+      background: rgba(12,21,48,.92);
       font-size: 12px;
       font-weight: 900;
       letter-spacing: .4px;
@@ -48,7 +87,7 @@
     }
     .badge.on { border-color: #4c6fff; }
 
-    .panel { margin-top: 12px; background:#0c1530; border:1px solid #223261; border-radius: 16px; padding: 12px; }
+    .panel { margin-top: 12px; background: rgba(12,21,48,.75); border:1px solid #223261; border-radius: 16px; padding: 12px; }
     .panel h2 { margin: 0 0 10px; font-size: 14px; opacity: .9; }
 
     .btnGrid {
@@ -57,7 +96,7 @@
       gap: 10px;
       margin-top: 8px;
     }
-    .btnGrid button { padding: 14px 10px; border-radius: 16px; }
+    .btnGrid button { padding: 14px 10px; border-radius: 16px; font-size: 18px; font-weight: 900; letter-spacing: .3px; }
 
     @media (max-width: 520px){
       .btnGrid { grid-template-columns: repeat(3, 1fr); }
@@ -80,6 +119,38 @@
       white-space: nowrap;
     }
 
+    /* Wicket/red styling + 4/6 highlight */
+    .btnGrid button.wicketBtn,
+    .btnGrid button.danger {
+      border-color: rgba(251,91,91,.65) !important;
+      background: rgba(251,91,91,.10) !important;
+    }
+    .btnGrid button.fourBtn{
+      border-color: rgba(45,212,191,.65) !important;
+      background: rgba(45,212,191,.10) !important;
+    }
+    .btnGrid button.sixBtn{
+      border-color: rgba(251,191,36,.75) !important;
+      background: rgba(251,191,36,.12) !important;
+    }
+
+    .chip.wicketChip{
+      border-color: rgba(251,91,91,.9) !important;
+      background: rgba(251,91,91,.14) !important;
+      color: #ffd2d2;
+      font-weight: 900;
+    }
+    .chip.fourChip{
+      border-color: rgba(45,212,191,.9) !important;
+      background: rgba(45,212,191,.14) !important;
+      font-weight: 900;
+    }
+    .chip.sixChip{
+      border-color: rgba(251,191,36,.95) !important;
+      background: rgba(251,191,36,.14) !important;
+      font-weight: 900;
+    }
+
     .cards { display: grid; gap: 10px; }
     .evCard {
       border: 1px solid rgba(255,255,255,.10);
@@ -87,8 +158,14 @@
       padding: 12px;
       background: rgba(255,255,255,.03);
     }
+
+    .evCard.wicketCard{
+      border-color: rgba(251,91,91,.45);
+      background: rgba(251,91,91,.06);
+    }
     .evTop { display:flex; justify-content: space-between; gap: 10px; align-items: baseline; }
     .evTitle { font-weight: 900; }
+    .evTitle .wicketText{ color:#ff8f8f; font-weight: 900; }
     .evBall { opacity:.8; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
     .evMeta { margin-top: 6px; display:flex; gap: 10px; flex-wrap: wrap; opacity:.9; font-size: 12px; }
     .pill { padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.15); }
@@ -101,9 +178,12 @@
     }
     .modal {
       width: min(720px, 100%);
-      background: #101a33; border: 1px solid #223261; border-radius: 18px;
+      background: rgba(16,26,51,.96);
+      border: 1px solid #223261;
+      border-radius: 18px;
       padding: 14px;
       box-shadow: 0 20px 60px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
     }
     .modal h3 { margin: 0 0 10px; font-size: 16px; }
     .grid2 { display: grid; grid-template-columns: 1fr; gap: 10px; }
@@ -207,10 +287,10 @@
           <button onclick="addEvent({kind:'legalRuns', runs:2})">2</button>
           <button onclick="addEvent({kind:'legalRuns', runs:3})">3</button>
 
-          <button onclick="addEvent({kind:'legalRuns', runs:4})">4</button>
+          <button class="fourBtn" onclick="addEvent({kind:'legalRuns', runs:4})">4</button>
           <button onclick="addEvent({kind:'legalRuns', runs:5})">5</button>
-          <button onclick="addEvent({kind:'legalRuns', runs:6})">6</button>
-          <button class="danger" onclick="addEvent({kind:'wicket'})">Wicket</button>
+          <button class="sixBtn" onclick="addEvent({kind:'legalRuns', runs:6})">6</button>
+          <button class="danger wicketBtn" onclick="addEvent({kind:'wicket'})">Wicket</button>
 
           <button class="danger" onclick="addEvent({kind:'runOut'})">Run Out</button>
         </div>
@@ -260,10 +340,14 @@
           <button class="danger" style="flex:1;" onclick="undoLast()">Undo last</button>
         </div>
 
-        <div class="row" style="margin-top:10px;">
-          <button class="danger" style="flex:1;" onclick="resetCurrentInnings()">Reset THIS innings</button>
-          <button class="danger" style="flex:1;" onclick="resetAll()">Reset BOTH innings</button>
-        </div>
+        <!-- Clean UI: resets under "More" -->
+        <details style="margin-top:10px;">
+          <summary>More (Reset / Admin)</summary>
+          <div class="row" style="padding: 0 12px 12px;">
+            <button class="danger" style="flex:1;" onclick="resetCurrentInnings()">Reset THIS innings</button>
+            <button class="danger" style="flex:1;" onclick="resetAll()">Reset BOTH innings</button>
+          </div>
+        </details>
       </div>
 
       <div class="panel">
@@ -447,11 +531,9 @@
   }
 
   function loadFromStoreToUI(){
-    // team
     const t = inningsData[currentInnings].team || (currentInnings === 1 ? "Team A" : "Team B");
     $("team").value = t;
 
-    // base -> start inputs
     const b = inningsData[currentInnings].base;
     $("startRuns").value = String(b.runs);
     $("startWkts").value = String(b.wkts);
@@ -542,7 +624,6 @@
       }
 
       overMap.get(overIdx).push({ ball: ballLabel, text: chipText(ev), blocked });
-
       view.push({
         idx: i,
         ball: ballLabel,
@@ -597,6 +678,12 @@
       for(const c of chips){
         const chip = document.createElement("div");
         chip.className = "chip";
+
+        const t = String(c.text);
+        if(t === "W" || t === "RO" || t === "RO(NB)") chip.classList.add("wicketChip");
+        if(t === "4") chip.classList.add("fourChip");
+        if(t === "6") chip.classList.add("sixChip");
+
         chip.textContent = `${c.ball} ${c.text}${c.blocked ? "*" : ""}`;
         balls.appendChild(chip);
       }
@@ -609,10 +696,17 @@
     for(let i = derived.view.length - 1; i >= 0; i--){
       const e = derived.view[i];
       const div = document.createElement("div");
-      div.className = "evCard";
+
+      const isWicketEvent = /WICKET|RUN OUT/.test(e.text);
+      div.className = "evCard" + (isWicketEvent ? " wicketCard" : "");
+
+      const titleText = escapeHtml(e.text);
+
       div.innerHTML = `
         <div class="evTop">
-          <div class="evTitle">#${e.idx + 1} — ${escapeHtml(e.text)}</div>
+          <div class="evTitle">#${e.idx + 1} — ${
+            isWicketEvent ? `<span class="wicketText">${titleText}</span>` : titleText
+          }</div>
           <div class="evBall">${escapeHtml(e.ball)}</div>
         </div>
         <div class="evMeta">
@@ -787,3 +881,4 @@
 </script>
 </body>
 </html>
+```
